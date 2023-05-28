@@ -61,7 +61,7 @@ pub async fn spawn_app() -> TestApp {
     // Get the port before spawning the application
     let port = application.port();
     {% if sqlx -%}
-    run_migrations(application.pool()).await;
+    //run_migrations(application.pool()).await;
     {% endif -%}
     let address = format!("http://127.0.0.1:{}", port);
     let _ = tokio::spawn(application.run_until_stopped());
@@ -73,11 +73,11 @@ pub async fn spawn_app() -> TestApp {
 }
 
 {% if sqlx -%}
-async fn run_migrations(pool : &SqlitePool)  {
-    sqlx::migrate!("./migrations")
-        .run(pool)
-        .await
-        .expect("Failed to migrate the database");
-   
-}
+//async fn run_migrations(pool : &SqlitePool)  {
+//    sqlx::migrate!("./migrations")
+//        .run(pool)
+//        .await
+//        .expect("Failed to migrate the database");
+//   
+//}
 {% endif -%}
