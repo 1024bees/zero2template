@@ -1,7 +1,7 @@
 # Builder stage
 
 
-FROM lukemathwalker/cargo-chef:latest-rust-1.59.0 as chef
+FROM lukemathwalker/cargo-chef:latest-rust-1.69.0 as chef
 WORKDIR /app
 RUN apt update && apt install lld clang -y
 FROM chef as planner
@@ -17,7 +17,7 @@ RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 ENV SQLX_OFFLINE true
 # Build our project
-RUN cargo build --release --bin zero2bees
+RUN cargo build --release --bin {{ crate_name }}
 
 
 # Runtime stage
@@ -32,7 +32,7 @@ RUN apt-get update -y \
 && apt-get autoremove -y \
 && apt-get clean -y \
 && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /app/target/release/zero2bees zero2bees
+COPY --from=builder /app/target/release/{{crate_name}}  {{ crate_name }}
 COPY configuration configuration
 ENV APP_ENVIRONMENT production
-ENTRYPOINT ["./zero2bees"]
+ENTRYPOINT ["./{{ zero2bees }}"]

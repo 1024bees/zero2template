@@ -6,7 +6,10 @@ use axum::{
     routing::{get, post},
     Extension, Router,
 };
+{% if sqlx -%}
 use sqlx::SqlitePool;
+use sqlx::sqlite::SqlitePoolOptions;
+{% endif -%}
 use std::future::Future;
 use std::net::TcpListener;
 
@@ -15,7 +18,7 @@ use tower_http::trace::TraceLayer;
 use tower_request_id::{RequestId, RequestIdLayer};
 
 use crate::configuration::{get_configuration, Settings};
-use sqlx::sqlite::SqlitePoolOptions;
+
 
 // We need to define a wrapper type in order to retrieve the URL
 // in the `subscribe` handler.
@@ -42,10 +45,13 @@ pub fn run(app: Application) -> impl Future<Output = Result<(), hyper::Error>> {
                 )
             }),
         )
+        {% if sqlx -%}
+        .layer(Extension(app.pool)
+        {% endif -%}
         // This layer creates a new id for each request and puts it into the request extensions.
         // Note that it should be added after the Trace layer.
-        .layer(RequestIdLayer)
-        .layer(Extension(app.pool));
+        .layer(RequestIdLayer);
+        
 
     axum::Server::from_tcp(listener)
         .expect("Spawning server from listener failed")
@@ -56,7 +62,9 @@ pub fn run(app: Application) -> impl Future<Output = Result<(), hyper::Error>> {
 pub struct Application {
     port: u16,
     listener: TcpListener,
+    {% if sqlx -%}
     pool: SqlitePool,
+    {% endif -%}
 }
 impl Application {
     // We have converted the `build` function into a constructor for
@@ -69,17 +77,26 @@ impl Application {
         let listener = TcpListener::bind(&address)?;
         let port = listener.local_addr().unwrap().port();
 
+        {% if sqlx -%}
         let pool = SqlitePoolOptions::default()
             .connect(format!("sqlite:{}", configuration.application.db_name).as_str())
             .await
             .expect("Failed connecting to the sqlitepool.. SUCKS!");
+        {% endif -%}
         // We "save" the bound port in one of `Application`'s fields
         Ok(Self {
             listener,
             port,
+        {% if sqlx -%}
             pool,
+        {% endif -%}
         })
     }
+
+    pub fn pool(&self) -> &SqlitePool {
+        &self.pool
+    }
+
     pub fn port(&self) -> u16 {
         self.port
     }

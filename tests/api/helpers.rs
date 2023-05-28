@@ -1,5 +1,7 @@
 use once_cell::sync::Lazy;
+{% if sqlx -%}
 use sqlx::{sqlite::SqlitePoolOptions, Connection, Executor, SqlitePool};
+{% endif -%}
 
 use wiremock::MockServer;
 use zero2template::configuration::get_configuration;
@@ -30,7 +32,10 @@ static TRACING: Lazy<()> = Lazy::new(|| {
 
 pub struct TestApp {
     pub address: String,
+    {% if sqlx -%}
     pub db_pool: SqlitePool,
+    {% endif -%}
+
     pub port: u16,
 }
 
@@ -52,7 +57,7 @@ pub async fn spawn_app() -> TestApp {
         c
     };
     // Create and migrate the database
-    let db_pool = create_db().await;
+    
 
     let application = Application::build(configuration.clone())
         .await
@@ -65,17 +70,18 @@ pub async fn spawn_app() -> TestApp {
     TestApp {
         address,
         port,
+        {% if sqlx -%}
         db_pool,
+        {% endif -%}
     }
 }
-async fn create_db() -> SqlitePool {
-    let connection_pool = SqlitePoolOptions::default()
-        .connect(":memory:")
-        .await
-        .expect("Failed to connect to sqlitedb.");
+
+{% if sqlx -%}
+async fn run_migrations(pool : &SqlitePool)  {
     sqlx::migrate!("./migrations")
         .run(&connection_pool)
         .await
         .expect("Failed to migrate the database");
-    connection_pool
+   
 }
+{% endif -%}
