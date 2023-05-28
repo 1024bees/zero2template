@@ -16,6 +16,7 @@ After running the command, there will be a few prompts:
 
 
 ## Relevant reading, libraries
+
 [cargo-generate]: https://github.com/cargo-generate/cargo-generate
 [`axum`]: https://github.com/tokio-rs/axum
 [`sqlx`]: https://github.com/launchbadge/sqlx
