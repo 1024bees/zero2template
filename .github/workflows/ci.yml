@@ -6,8 +6,6 @@ on:
   pull_request:
     paths-ignore:
       - "**/README.md"
-  
-  
 
 env:
   CARGO_TERM_COLOR: always
@@ -31,10 +29,9 @@ jobs:
         sqlx: ["true", "false"]
         action:
           - command: build
-            args: --releases
-          - command: target
-          - command: fmt
-            args: -- --check
+            args: --release
+          - command: test
+            args: --release
           - command: clippy
             args: --no-deps -- -D warnings -A clippy::empty_loop -A dead_code
     steps:

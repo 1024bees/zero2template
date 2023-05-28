@@ -74,7 +74,7 @@ impl Application {
             "{}:{}",
             configuration.application.host, configuration.application.port
         );
-        let listener = TcpListener::bind(&address)?;
+        let listener = TcpListener::bind(address)?;
         let port = listener.local_addr().unwrap().port();
 
         {% if sqlx -%}
