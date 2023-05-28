@@ -1,0 +1,63 @@
+name: CI
+on:
+  push:
+    paths-ignore:
+      - "**/README.md"
+  pull_request:
+    paths-ignore:
+      - "**/README.md"
+  
+  
+
+env:
+  CARGO_TERM_COLOR: always
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+# Cancel any currently running workflows from the same PR, branch, or
+# tag when a new workflow is triggered.
+#
+# https://stackoverflow.com/a/66336834
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+
+jobs:
+  rust-checks:
+    name: cargo ${{ matrix.action.command }} - (sqlx=${{ matrix.sqlx }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sqlx: ["true", "false"]
+        action:
+          - command: build
+            args: --releases
+          - command: target
+          - command: fmt
+            args: -- --check
+          - command: clippy
+            args: --no-deps -- -D warnings -A clippy::empty_loop -A dead_code
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          path: /home/runner/work/zero2template/zero2template/github-template
+      - name: Setup | Rust
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy, rustfmt, rust-src
+      - uses: Swatinem/rust-cache@v2
+      - name: Setup | cargo-generate (binaries)
+        id: binaries
+        continue-on-error: true
+        run: |
+          sudo curl -L "https://github.com/cargo-generate/cargo-generate/releases/latest/download/cargo-generate-$(git ls-remote --refs --sort="version:refname" --tags "https://github.com/cargo-generate/cargo-generate" | cut -d/ -f3- | tail -n1)-x86_64-unknown-linux-gnu.tar.gz" -o "/home/runner/.cargo/bin/cargo-generate.tar.gz"
+          tar xf "/home/runner/.cargo/bin/cargo-generate.tar.gz" -C /home/runner/.cargo/bin
+          chmod u+x /home/runner/.cargo/bin/cargo-generate
+      - name: Setup | cargo-generate (cargo)
+        if: steps.binaries.outcome != 'success'
+        run: cargo install cargo-generate
+      - name: Generate
+        run: cargo generate --path /home/runner/work/zero2template/zero2template/github-template --allow-commands --name test --vcs none --silent -d -d alloc=${{ matrix.sqlx}}
+      - name: cargo ${{ matrix.action.command }}
+        run: cd test; cargo ${{ matrix.action.command }} ${{ matrix.action.args }}

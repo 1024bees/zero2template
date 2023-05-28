@@ -1,0 +1,16 @@
+[template]
+cargo_generate_version = ">=0.17.4"
+ignore = [".git", "README.md"]
+
+
+
+[placeholders.sqlx]
+type = "bool"
+prompt = "Add sqlx, with sqlite as the database driver?"
+default = true
+
+
+[conditional.'sqlx == false']
+ignore = [
+    "migrations/"
+]

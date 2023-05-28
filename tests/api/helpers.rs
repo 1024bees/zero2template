@@ -1,17 +1,13 @@
 use once_cell::sync::Lazy;
 {% if sqlx -%}
-use sqlx::{sqlite::SqlitePoolOptions, Connection, Executor, SqlitePool};
+use sqlx::SqlitePool;
 {% endif -%}
 
-use wiremock::MockServer;
-use zero2template::configuration::get_configuration;
-use zero2template::startup::Application;
-use zero2template::telemetry::{get_subscriber, init_subscriber};
 
-pub struct ConfirmationLinks {
-    pub html: reqwest::Url,
-    pub plain_text: reqwest::Url,
-}
+use {{ crate_name }}::configuration::get_configuration;
+use {{ crate_name }}::startup::Application;
+use {{ crate_name }}::telemetry::{get_subscriber, init_subscriber};
+
 
 // Ensure that the `tracing` stack is only initialised once using `once_cell`
 static TRACING: Lazy<()> = Lazy::new(|| {
@@ -32,10 +28,6 @@ static TRACING: Lazy<()> = Lazy::new(|| {
 
 pub struct TestApp {
     pub address: String,
-    {% if sqlx -%}
-    pub db_pool: SqlitePool,
-    {% endif -%}
-
     pub port: u16,
 }
 
@@ -45,14 +37,18 @@ pub async fn spawn_app() -> TestApp {
     Lazy::force(&TRACING);
     // Randomise configuration to ensure test isolation
 
-    let email_server = MockServer::start().await;
+    
     let configuration = {
         let mut c = get_configuration().expect("Failed to read configuration.");
         // Use a different database for each test case
 
         // Use a random OS port
         c.application.port = 0;
+        {% if sqlx -%}
+
         c.application.db_name = ":memory:".into();
+        {% endif -%}
+
 
         c
     };
@@ -64,22 +60,22 @@ pub async fn spawn_app() -> TestApp {
         .expect("Failed to build application.");
     // Get the port before spawning the application
     let port = application.port();
+    {% if sqlx -%}
+    run_migrations(application.pool()).await;
+    {% endif -%}
     let address = format!("http://127.0.0.1:{}", port);
     let _ = tokio::spawn(application.run_until_stopped());
 
     TestApp {
         address,
-        port,
-        {% if sqlx -%}
-        db_pool,
-        {% endif -%}
+        port
     }
 }
 
 {% if sqlx -%}
 async fn run_migrations(pool : &SqlitePool)  {
     sqlx::migrate!("./migrations")
-        .run(&connection_pool)
+        .run(pool)
         .await
         .expect("Failed to migrate the database");
    

@@ -1,11 +1,11 @@
-use zero2template::configuration::get_configuration;
+use {{ crate_name }}::configuration::get_configuration;
 
-use zero2template::startup::Application;
-use zero2template::telemetry::{get_subscriber, init_subscriber};
+use {{ crate_name }}::startup::Application;
+use {{ crate_name }}::telemetry::{get_subscriber, init_subscriber};
 
 #[tokio::main]
 async fn main() -> Result<(), hyper::Error> {
-    let subscriber = get_subscriber("zero2template".into(), "info".into(), std::io::stdout);
+    let subscriber = get_subscriber("{{ crate_name }}".into(), "info".into(), std::io::stdout);
     init_subscriber(subscriber);
     let configuration = get_configuration().expect("Failed to read configuration.");
     let app = Application::build(configuration)

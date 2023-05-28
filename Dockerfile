@@ -35,4 +35,4 @@ RUN apt-get update -y \
 COPY --from=builder /app/target/release/{{crate_name}}  {{ crate_name }}
 COPY configuration configuration
 ENV APP_ENVIRONMENT production
-ENTRYPOINT ["./{{ zero2bees }}"]
+ENTRYPOINT ["./{{ crate_name }}"]

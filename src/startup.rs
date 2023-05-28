@@ -3,8 +3,8 @@ use super::routes::health_check;
 use axum::body::Body;
 use axum::http::Request;
 use axum::{
-    routing::{get, post},
-    Extension, Router,
+    routing::{get},
+    Router,
 };
 {% if sqlx -%}
 use sqlx::SqlitePool;
@@ -13,11 +13,10 @@ use sqlx::sqlite::SqlitePoolOptions;
 use std::future::Future;
 use std::net::TcpListener;
 
-use std::sync::Arc;
 use tower_http::trace::TraceLayer;
 use tower_request_id::{RequestId, RequestIdLayer};
 
-use crate::configuration::{get_configuration, Settings};
+use crate::configuration::{Settings};
 
 
 // We need to define a wrapper type in order to retrieve the URL
@@ -46,11 +45,12 @@ pub fn run(app: Application) -> impl Future<Output = Result<(), hyper::Error>> {
             }),
         )
         {% if sqlx -%}
-        .layer(Extension(app.pool)
+        .layer(axum::Extension(app.pool))
         {% endif -%}
         // This layer creates a new id for each request and puts it into the request extensions.
         // Note that it should be added after the Trace layer.
-        .layer(RequestIdLayer);
+        .layer(RequestIdLayer)
+        .layer(axum::Extension(reqwest::Client::new()));
         
 
     axum::Server::from_tcp(listener)
@@ -92,10 +92,11 @@ impl Application {
         {% endif -%}
         })
     }
-
+    {% if sqlx -%}
     pub fn pool(&self) -> &SqlitePool {
         &self.pool
     }
+    {% endif -%}
 
     pub fn port(&self) -> u16 {
         self.port
