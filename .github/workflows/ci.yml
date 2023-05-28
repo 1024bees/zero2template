@@ -29,9 +29,7 @@ jobs:
         sqlx: ["true", "false"]
         action:
           - command: build
-            args: --release
           - command: test
-            args: --release
           - command: clippy
             args: --no-deps -- -D warnings -A clippy::empty_loop -A dead_code
     steps:
@@ -55,6 +53,6 @@ jobs:
         if: steps.binaries.outcome != 'success'
         run: cargo install cargo-generate
       - name: Generate
-        run: cargo generate --path /home/runner/work/zero2template/zero2template/github-template --allow-commands --name test --vcs none --silent -d sqlx=${{ matrix.sqlx}}
+        run: cargo generate --path /home/runner/work/zero2template/zero2template/github-template --allow-commands --name templated --vcs none --silent -d sqlx=${{ matrix.sqlx}}
       - name: cargo ${{ matrix.action.command }}
-        run: cd test; cargo ${{ matrix.action.command }} ${{ matrix.action.args }}
+        run: cd templated; cargo ${{ matrix.action.command }} ${{ matrix.action.args }}
