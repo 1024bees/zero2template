@@ -1,6 +1,6 @@
 [template]
 cargo_generate_version = ">=0.17.4"
-ignore = [".git", "README.md"]
+ignore = [".git", "README.md", ".github"]
 
 
 
