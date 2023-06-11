@@ -29,7 +29,8 @@ where
     let env_filter =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(env_filter));
 
-    Registry::default().with(env_filter)
+    let fmt = tracing_subscriber::fmt::layer().pretty().with_writer(sink);
+    Registry::default().with(env_filter).with(fmt)
 }
 /// Register a subscriber as global default to process span data.
 ///
